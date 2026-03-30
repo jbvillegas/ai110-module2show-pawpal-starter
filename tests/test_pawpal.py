@@ -128,6 +128,111 @@ class TestOwnerManagement:
         assert all(isinstance(pair, tuple) and len(pair) == 2 for pair in all_tasks)
 
 
+class TestRecurringTasks:
+    """Test recurring task logic and next occurrence generation."""
+
+    def test_get_next_occurrence_date_daily(self):
+        """Verify that get_next_occurrence_date() calculates correct date for daily tasks."""
+        task = Task(description="Feeding", time_minutes=10, frequency="daily", priority="high")
+        task.mark_complete(completed_on=date(2026, 3, 30))
+
+        next_date = task.get_next_occurrence_date()
+
+        assert next_date == date(2026, 3, 31)
+
+    def test_get_next_occurrence_date_weekly(self):
+        """Verify that get_next_occurrence_date() calculates correct date for weekly tasks."""
+        task = Task(description="Grooming", time_minutes=30, frequency="weekly", priority="medium")
+        task.mark_complete(completed_on=date(2026, 3, 30))
+
+        next_date = task.get_next_occurrence_date()
+
+        assert next_date == date(2026, 4, 6)
+
+    def test_create_next_occurrence_daily(self):
+        """Verify that create_next_occurrence() creates a new task for daily recurrence."""
+        original = Task(description="Walk", time_minutes=30, frequency="daily", priority="high")
+        original.mark_complete(completed_on=date(2026, 3, 30))
+
+        next_task = original.create_next_occurrence()
+
+        assert next_task is not None
+        assert next_task.description == "Walk"
+        assert next_task.time_minutes == 30
+        assert next_task.frequency == "daily"
+        assert next_task.priority == "high"
+        assert next_task.completed is False
+        assert next_task.last_completed_on is None
+
+    def test_create_next_occurrence_none_for_once_tasks(self):
+        """Verify that create_next_occurrence() returns None for non-recurring tasks."""
+        task = Task(description="Vaccination", time_minutes=15, frequency="once", priority="high")
+        task.mark_complete()
+
+        next_task = task.create_next_occurrence()
+
+        assert next_task is None
+
+    def test_automatic_task_generation_on_complete(self):
+        """Verify that marking a recurring task complete automatically creates next occurrence."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        owner.add_pet(dog)
+
+        # Add a daily task
+        daily_task = Task(description="Morning walk", time_minutes=30, frequency="daily", priority="high")
+        dog.add_task(daily_task)
+
+        assert len(dog.tasks) == 1
+
+        # Create scheduler and mark task complete
+        scheduler = Scheduler()
+        success = scheduler.mark_task_complete(owner, "Buddy", "Morning walk")
+
+        # Verify completion and auto-generation
+        assert success is True
+        assert len(dog.tasks) == 2  # Original + new occurrence
+        assert dog.tasks[0].completed is True  # Original is completed
+        assert dog.tasks[1].completed is False  # New occurrence not yet completed
+        assert dog.tasks[1].description == "Morning walk"  # Same description
+        assert dog.tasks[1].frequency == "daily"  # Same frequency
+
+    def test_no_auto_generation_for_once_tasks(self):
+        """Verify that non-recurring tasks don't create next occurrences."""
+        owner = Owner(name="Alice")
+        cat = Pet(name="Whiskers", species="cat", age=5)
+        owner.add_pet(cat)
+
+        # Add a one-time task
+        once_task = Task(description="Annual checkup", time_minutes=45, frequency="once", priority="high")
+        cat.add_task(once_task)
+
+        assert len(cat.tasks) == 1
+
+        # Mark complete
+        scheduler = Scheduler()
+        scheduler.mark_task_complete(owner, "Whiskers", "Annual checkup")
+
+        # Verify no new task is created
+        assert len(cat.tasks) == 1  # Still only the original
+        assert cat.tasks[0].completed is True
+
+    def test_weekly_task_generates_with_correct_interval(self):
+        """Verify weekly tasks generate next occurrence 7 days later."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        owner.add_pet(dog)
+
+        # Add a weekly task completed on March 30
+        weekly_task = Task(description="Grooming", time_minutes=60, frequency="weekly", priority="medium")
+        weekly_task.last_completed_on = date(2026, 3, 23)  # Set previous completion
+        dog.add_task(weekly_task)
+
+        # Verify next occurrence is 7 days later
+        next_date = weekly_task.get_next_occurrence_date()
+        assert next_date == date(2026, 3, 30)
+
+
 class TestScheduler:
     """Test Scheduler functionality."""
 
