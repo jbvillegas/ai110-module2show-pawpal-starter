@@ -1,20 +1,17 @@
-# Step 1: Plan What to Test - COMPLETE ✅
+# Testing Plan for PawPal+
 
-## Summary of Testing Plan
+## Core Behaviors to Test
 
-I've prepared a comprehensive testing strategy for PawPal+ focusing on core behaviors and edge cases.
+I identified 5 critical areas that need testing based on the core logic:
 
----
+### 1. Task Recurring Logic 
+**What to test:** Different frequencies calculate next occurrence dates correctly.
 
-## Core Behaviors Identified (5 Critical Areas)
-
-### 1️⃣ **Task Recurring Logic** 
-**What to test:** Different frequencies (daily/weekly/biweekly/monthly/once) calculating correct next occurrence dates.
-
-- ✅ `get_next_occurrence_date()` - calculates next due date based on frequency
-- ✅ `create_next_occurrence()` - clones task with correct properties
-- ✅ `is_due(on_date)` - returns True when task should be scheduled
-- ✅ One-time tasks don't recur after completion
+Key methods:
+- `get_next_occurrence_date()` - calculates next due date based on frequency
+- `create_next_occurrence()` - copies task with correct properties
+- `is_due(on_date)` - returns True when task should be scheduled
+- One-time tasks don't recur after completion
 
 **Happy Path Examples:**
 - Daily task completed today → due tomorrow
@@ -24,20 +21,21 @@ I've prepared a comprehensive testing strategy for PawPal+ focusing on core beha
 **Edge Cases to Test:**
 - Month boundary (Feb 28 → Mar 28)
 - Null `last_completed_on` → treated as always due
-- Invalid frequency string → graceful handling
+- Invalid frequency string → handled gracefully
 
 ---
 
-### 2️⃣ **Scheduling Algorithm**
+### 2. Scheduling Algorithm
 **What to test:** Time-budget greedy packing respects constraints and prioritizes correctly.
 
-- ✅ `organize_tasks()` - returns due tasks sorted by priority, frequency, duration
-- ✅ `build_daily_plan()` - packs tasks greedily until time budget exhausted
-- ✅ Respects time constraints (no overflow)
-- ✅ High-priority and frequent tasks scheduled first
+Key methods:
+- `organize_tasks()` - returns due tasks sorted by priority, frequency, duration
+- `build_daily_plan()` - packs tasks greedily until time budget exhausted
+- Respects time constraints (no overflow)
+- High-priority and frequent tasks scheduled first
 
 **Happy Path Examples:**
-- 6 tasks, 90 min available → schedule highest-priority subset that fits
+- 6 tasks, 90 min available → schedule highest-priority tasks that fit
 - All tasks fit → full plan returned
 - No tasks fit → empty plan, no crash
 
@@ -50,16 +48,17 @@ I've prepared a comprehensive testing strategy for PawPal+ focusing on core beha
 
 ---
 
-### 3️⃣ **Sorting Methods** (3 methods)
+### 3. Sorting Methods
 **What to test:** Correct ordering by duration, priority, and pet name.
 
-- ✅ `sort_by_duration()` - ascending/descending by time_minutes
-- ✅ `sort_by_priority()` - high > medium > low
-- ✅ `sort_by_pet_name()` - alphabetical (case-insensitive)
+Key methods:
+- `sort_by_duration()` - ascending/descending by time_minutes
+- `sort_by_priority()` - high, medium, low
+- `sort_by_pet_name()` - alphabetical (case-insensitive)
 
 **Happy Path Examples:**
 - 5 tasks mixed durations → sorted ascending/descending correctly
-- 5 tasks mixed priorities → sorted high→low
+- 5 tasks mixed priorities → sorted high to low
 - 3 pets (Buddy, Whiskers, Max) → alphabetical order
 
 **Edge Cases to Test:**
@@ -69,12 +68,13 @@ I've prepared a comprehensive testing strategy for PawPal+ focusing on core beha
 
 ---
 
-### 4️⃣ **Filtering Methods** (3 methods)
+### 4. Filtering Methods
 **What to test:** Each filter returns only matching tasks; chaining filters works.
 
-- ✅ `filter_by_pet(pet_name)` - only tasks for specific pet
-- ✅ `filter_by_priority(min_priority)` - threshold-based (≥ level)
-- ✅ `filter_by_completion_status(completed)` - pending vs completed
+Key methods:
+- `filter_by_pet(pet_name)` - only tasks for specific pet
+- `filter_by_priority(min_priority)` - threshold-based (>= level)
+- `filter_by_completion_status(completed)` - pending vs completed
 
 **Happy Path Examples:**
 - Filter Buddy's tasks from 6-task list → 3 Buddy tasks
@@ -84,17 +84,18 @@ I've prepared a comprehensive testing strategy for PawPal+ focusing on core beha
 **Edge Cases to Test:**
 - Non-existent pet ("Fluffy") → empty list, no crash
 - No tasks match filter → empty list
-- Chain filters: `filter_by_pet()` → `filter_by_priority()` → correct intersection
+- Chain filters: `filter_by_pet()` then `filter_by_priority()` → correct intersection
 - Case-insensitive pet name matching (buddy vs BUDDY)
 
 ---
 
-### 5️⃣ **Conflict Detection**
+### 5. Conflict Detection
 **What to test:** Warnings are accurate, non-blocking, and catch real issues.
 
-- ✅ `detect_conflicts(plan)` - scans for 4 types of conflicts
-- ✅ `validate_plan(plan, available_minutes)` - returns (plan, warnings)
-- ✅ Warnings are non-blocking; plan still presented to user
+Key methods:
+- `detect_conflicts(plan)` - scans for conflicts
+- `validate_plan(plan, available_minutes)` - returns (plan, warnings)
+- Warnings are non-blocking; plan still presented to user
 
 **Conflict Types:**
 1. Pet overwhelm: 3+ high-priority tasks → warning

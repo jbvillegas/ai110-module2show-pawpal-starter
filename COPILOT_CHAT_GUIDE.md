@@ -1,17 +1,4 @@
-# Starting Copilot Chat for Testing
-
-## How to Start a New Chat Session
-
-In VS Code:
-1. Press `Cmd+Shift+I` (or click Copilot Chat icon) to open a new chat
-2. Focus the chat on this project: reference `#codebase` 
-3. Use the prompts below to guide Copilot
-
----
-
-## Prompt: Identifying Edge Cases for Pet Scheduler
-
-**Copy and paste this into Copilot Chat:**
+# Using Copilot Chat for Testing\n\n## Starting a Chat Session\n\nIn VS Code, press Cmd+Shift+I to open Copilot Chat. Reference `#codebase` to focus on this project.\n\n## Useful Prompts\n\nHere's a prompt you can copy and paste to ask Copilot about edge cases:
 
 ```
 I'm building PawPal+, a pet care scheduling system in Python with:

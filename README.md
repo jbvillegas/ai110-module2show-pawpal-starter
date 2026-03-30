@@ -78,7 +78,7 @@ Warnings are non-blocking; the plan is still presented to the user with warnings
 
 ### Running Tests
 
-To run the full test suite and verify all system behaviors:
+Run the test suite to verify all system behaviors:
 
 ```bash
 python -m pytest tests/test_pawpal.py -v
@@ -86,28 +86,21 @@ python -m pytest tests/test_pawpal.py -v
 
 ### Test Coverage
 
-The test suite includes **35 comprehensive tests** across 8 test classes:
+The test suite has 35 tests across 8 test classes:
 
-- **Task Lifecycle** (2 tests): Verify task completion, incompletion, and status tracking.
-- **Task Management** (2 tests): Test adding/removing tasks from pets.
-- **Owner Management** (2 tests): Validate pet addition and multi-pet task aggregation.
-- **Recurring Tasks** (7 tests): Verify daily/weekly/biweekly scheduling, auto-generation of next occurrences, and one-time task behavior.
-- **Sorting Methods** (5 tests): Confirm sorting by duration, priority, pet name, and case-insensitive matching.
-- **Filtering Methods** (7 tests): Test filtering by pet, priority, completion status, and filter chaining.
-- **Conflict Detection** (8 tests): Validate pet overwhelm detection, energy missequencing warnings, back-to-back high-energy alerts, and time overrun detection.
-- **Scheduler Core** (2 tests): Verify time-budget planning and plan summary generation.
+- Task Lifecycle (2 tests): Task completion, incompletion, and status tracking
+- Task Management (2 tests): Adding/removing tasks from pets
+- Owner Management (2 tests): Pet addition and multi-pet task aggregation
+- Recurring Tasks (7 tests): Daily/weekly/biweekly scheduling, auto-generation, one-time behavior
+- Sorting Methods (5 tests): Duration, priority, pet name, and case-insensitive matching
+- Filtering Methods (7 tests): Filtering by pet, priority, completion status, and chaining
+- Conflict Detection (8 tests): Pet overwhelm, energy missequencing, back-to-back high-energy, time overrun
+- Scheduler Core (2 tests): Time-budget planning and plan summary generation
 
-All tests achieve **100% pass rate** with zero failures.
+All 35 tests pass consistently with zero failures.
 
 ### Confidence Level
 
-**⭐⭐⭐⭐⭐ (5/5 stars)**
+Five stars. The system is thoroughly tested with comprehensive coverage across all core algorithms and edge cases. All sorting, filtering, and conflict detection methods are verified. Recurring task automation works across all frequencies. Time budget scheduling handles realistic constraints properly. No known bugs or regressions.
 
-The system has been thoroughly tested with comprehensive coverage of all core algorithms and edge cases:
-- All 35 tests passing consistently
-- Sorting, filtering, and conflict detection verified exhaustively
-- Recurring task automation validated across all frequencies
-- Time budget scheduling tested with realistic constraints
-- No known bugs or regressions
-
-The PawPal+ system is **production-ready** for reliable pet care scheduling and planning.
+The PawPal+ system is ready for production use as a pet care scheduler.

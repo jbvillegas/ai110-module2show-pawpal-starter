@@ -1,27 +1,29 @@
 # PawPal+ Scheduling Logic Improvements
 
-## Current State Analysis
+## Current Status
 
-### What Works Well
-- ✅ Basic task creation and completion tracking
-- ✅ Frequency-aware due date logic (daily, weekly, etc.)
-- ✅ Priority-weighted task ranking via weighted tuple sort
-- ✅ Greedy time-budget planning (fits as many tasks as possible)
-- ✅ Multi-pet aggregation and management
+### What Works
+- Basic task creation and completion tracking
+- Frequency-aware due date logic (daily, weekly, etc.)
+- Priority-weighted task ranking via weighted tuple sort
+- Greedy time-budget planning (fits as many tasks as possible)
+- Multi-pet aggregation and management
 
-### What Feels Manual or Overly Simple
-1. **Task Sorting**: Hard-coded weighted tuple in `organize_tasks()` - difficult to adjust weights or add new criteria
-2. **Time Management**: Greedy packing with no time-of-day awareness (`morning`, `afternoon`, `evening`)
+### What Could Be Better
+1. **Task Sorting**: Hard-coded weighted tuple in `organize_tasks()` - tough to adjust weights or add new criteria
+2. **Time Management**: Greedy packing with no time-of-day awareness (morning, afternoon, evening)
 3. **Scheduling Strategy**: Linear selection with no conflict detection or time-slot assignment
 4. **Filtering**: No explicit filter methods (by pet, by status, by priority level)
 5. **Recurring Tasks**: `is_due()` handles frequency but no special multi-occurrence handling
-6. **Explainability**: Why was task X skipped? No decision metadata stored
+6. **Explainability**: No clear explanation of why task X was skipped
 
 ---
 
-## Proposed Improvements (Tagged by Complexity)
+## Potential Improvements
 
-### 1️⃣ **Filtering Helpers** (EASY)
+Here are some ideas to build on the current system. I grouped them by difficulty.
+
+### 1. Filtering Helpers
 **Goal**: Add explicit methods to filter tasks by different criteria
 
 ```python
@@ -36,7 +38,7 @@ def filter_tasks_by_time_window(tasks, window="morning") -> List[Tuple[Pet, Task
 
 ---
 
-### 2️⃣ **Time-of-Day Scheduling** (MEDIUM)
+### 2. Time-of-Day Scheduling
 **Goal**: Assign tasks to logical time slots (morning, afternoon, evening)
 
 ```python
@@ -53,7 +55,7 @@ def assign_time_slots(self, plan: List[Tuple[Pet, Task]]) -> List[TimedTask]:
 
 ---
 
-### 3️⃣ **Recurring Task Expansion** (MEDIUM)
+### 3. Recurring Task Expansion
 **Goal**: Handle multi-occurrence tasks (e.g., "Feeding" happens 2x daily)
 
 ```python
@@ -70,7 +72,7 @@ def expand_recurring_tasks(self, tasks) -> List[Tuple[Pet, Task, int]]:
 
 ---
 
-### 4️⃣ **Conflict Detection** (MEDIUM)
+### 4. Conflict Detection
 **Goal**: Detect and flag scheduling conflicts
 
 ```python
@@ -87,7 +89,7 @@ def has_conflicts(self, plan: List[Tuple[Pet, Task]]) -> List[str]:
 
 ---
 
-### 5️⃣ **Dynamic Sorting Strategy** (MEDIUM)
+### 5. Dynamic Sorting Strategy
 **Goal**: Replace hard-coded tuple sort with configurable scoring function
 
 ```python
