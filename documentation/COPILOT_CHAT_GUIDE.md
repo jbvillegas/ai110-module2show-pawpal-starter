@@ -1,4 +1,12 @@
-# Using Copilot Chat for Testing\n\n## Starting a Chat Session\n\nIn VS Code, press Cmd+Shift+I to open Copilot Chat. Reference `#codebase` to focus on this project.\n\n## Useful Prompts\n\nHere's a prompt you can copy and paste to ask Copilot about edge cases:
+# Using Copilot Chat for Testing
+
+## Starting a Chat Session
+
+In VS Code, press `Cmd+Shift+I` to open Copilot Chat. Reference `#codebase` so the suggestions stay grounded in this project.
+
+## Useful Prompts
+
+Here is a prompt you can copy and paste to ask Copilot about edge cases:
 
 ```
 I'm building PawPal+, a pet care scheduling system in Python with:
@@ -93,10 +101,8 @@ I should test for? Any missing cases?"
 
 ## Expected Outcome
 
-After this Testing phase:
-- All 15 existing tests still pass
-- 20+ new edge case tests added
-- Code is robust against boundary conditions
-- Confidence in the scheduler increases from 8/10 to 9/10
-
-Good luck! 🧪
+After this testing phase:
+- Existing tests should still pass
+- Additional edge-case tests should be added
+- Behavior on boundaries should be clearer and easier to trust
+- Confidence in scheduler reliability should increase

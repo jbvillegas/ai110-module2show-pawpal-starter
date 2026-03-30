@@ -147,26 +147,103 @@ available_minutes = st.number_input(
     value=120
 )
 
+st.subheader("Plan View Options")
+col1, col2, col3 = st.columns(3)
+with col1:
+    sort_mode = st.selectbox(
+        "Sort plan by",
+        [
+            "Smart default",
+            "Duration (shortest first)",
+            "Duration (longest first)",
+            "Priority (high first)",
+            "Pet name (A-Z)",
+        ],
+    )
+with col2:
+    filter_pet = st.selectbox(
+        "Filter by pet",
+        ["All pets"] + [pet.name for pet in st.session_state.owner.pets],
+    )
+with col3:
+    min_priority = st.selectbox(
+        "Minimum priority",
+        ["low", "medium", "high"],
+        index=0,
+    )
+
+
+def _to_table_rows(plan):
+    return [
+        {
+            "Pet": pet.name,
+            "Task": task.description,
+            "Minutes": task.time_minutes,
+            "Priority": task.priority,
+            "Frequency": task.frequency,
+        }
+        for pet, task in plan
+    ]
+
 if st.button("🎯 Generate Schedule"):
     if not st.session_state.owner.pets:
         st.error("❌ Add at least one pet first!")
     elif not any(pet.tasks for pet in st.session_state.owner.pets):
         st.error("❌ Add at least one task first!")
     else:
-        # Build the daily plan
-        plan = st.session_state.scheduler.build_daily_plan(
+        # Build base smart plan from scheduler
+        base_plan = st.session_state.scheduler.build_daily_plan(
             st.session_state.owner,
             available_minutes=available_minutes
         )
 
-        # Display the plan
-        st.subheader("📋 Today's Schedule")
-        st.markdown(st.session_state.scheduler.plan_summary(plan))
+        # Apply filters using Scheduler methods
+        visible_plan = list(base_plan)
+        if filter_pet != "All pets":
+            visible_plan = st.session_state.scheduler.filter_by_pet(visible_plan, filter_pet)
+        visible_plan = st.session_state.scheduler.filter_by_priority(visible_plan, min_priority=min_priority)
 
-        # Show breakdown
-        if plan:
+        # Apply sorting using Scheduler methods
+        if sort_mode == "Duration (shortest first)":
+            visible_plan = st.session_state.scheduler.sort_by_duration(visible_plan, ascending=True)
+        elif sort_mode == "Duration (longest first)":
+            visible_plan = st.session_state.scheduler.sort_by_duration(visible_plan, ascending=False)
+        elif sort_mode == "Priority (high first)":
+            visible_plan = st.session_state.scheduler.sort_by_priority(visible_plan)
+        elif sort_mode == "Pet name (A-Z)":
+            visible_plan = st.session_state.scheduler.sort_by_pet_name(visible_plan)
+
+        # Validate and show conflict warnings against the base plan.
+        _, warnings = st.session_state.scheduler.validate_plan(base_plan, available_minutes)
+
+        st.subheader("📋 Today's Schedule")
+
+        if warnings:
+            st.warning("We found potential conflicts in this schedule. Review these before starting the day.")
+            for message in warnings:
+                if "INFO:" in message:
+                    st.info(message)
+                else:
+                    st.warning(message)
+            with st.expander("Helpful next steps for pet owners"):
+                st.write("- Spread high-energy tasks across the day instead of back-to-back.")
+                st.write("- Move grooming after a cool-down period.")
+                st.write("- Reduce total schedule time if the day feels overloaded.")
+        else:
+            st.success("No schedule conflicts detected.")
+
+        if visible_plan:
+            st.success(
+                f"Showing {len(visible_plan)} tasks from {len(base_plan)} scheduled tasks "
+                f"(filter: {filter_pet}, minimum priority: {min_priority})."
+            )
+            st.table(_to_table_rows(visible_plan))
+
+            total_minutes = sum(task.time_minutes for _, task in visible_plan)
+            st.caption(f"Total visible time: {total_minutes} minutes")
+
             st.subheader("Task Breakdown")
-            for i, (pet, task) in enumerate(plan, 1):
+            for i, (pet, task) in enumerate(visible_plan, 1):
                 with st.expander(f"{i}. [{pet.name}] {task.description}", expanded=False):
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
@@ -185,4 +262,6 @@ if st.button("🎯 Generate Schedule"):
                             st.success(f"✅ Marked '{task.description}' as complete!")
                             st.rerun()
         else:
-            st.warning("⚠️ No tasks fit in the available time. Increase available time or reduce task count.")
+            st.warning(
+                "No tasks match your current filters. Try 'All pets' or lower the minimum priority."
+            )

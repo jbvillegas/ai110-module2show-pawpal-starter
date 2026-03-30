@@ -1,26 +1,56 @@
 # PawPal+ (Module 2 Project)
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+PawPal+ is a Streamlit app for planning pet-care routines with a scheduling engine that prioritizes tasks, enforces a daily time budget, supports recurring care, and flags potential conflicts.
 
 ## Scenario
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+A busy pet owner needs help staying consistent with pet care. The app is designed to:
 
 - Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
+- Consider constraints (time available, priority, recurrence)
 - Produce a daily plan and explain why it chose that plan
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+The project combines UML-first design, Python backend logic, and a Streamlit interface.
 
-## What you will build
+## Features
 
-Your final app should:
+### Core Planning
+- **Time-budget scheduling**: Builds a daily plan that fits within available minutes using greedy selection.
+- **Priority-aware organization**: Higher-priority tasks are evaluated before lower-priority tasks.
+- **Due-task retrieval**: Schedules only tasks that are currently due.
+
+### Sorting and Filtering
+- **Sorting by time**: Sort by duration (shortest-first or longest-first).
+- **Sorting by priority**: Re-rank views to show high-priority work first.
+- **Sorting by pet**: Group or scan tasks alphabetically by pet name.
+- **Filter by pet**: Show tasks for one pet only.
+- **Filter by minimum priority**: Limit views to low/medium/high thresholds.
+- **Filter by completion status**: Split pending and completed task views.
+
+### Recurrence and Automation
+- **Daily/weekly/biweekly/monthly recurrence**: Computes next due dates from completion history.
+- **Automatic next occurrence creation**: Marking a recurring task complete creates the next instance automatically.
+- **One-time task handling**: `once` tasks complete without generating future instances.
+
+### Conflict Warnings
+- **Pet overwhelm warnings**: Detects schedules with too many tasks for one pet.
+- **Energy sequencing warnings**: Flags high-energy activity immediately followed by grooming.
+- **Back-to-back high-energy warnings**: Flags high-energy sequences that may be too long.
+- **Total time overrun info**: Notifies when total scheduled time exceeds a heavy daily threshold.
+
+## What This App Supports
+
+The current implementation supports:
 
 - Let a user enter basic owner + pet info
-- Let a user add/edit tasks (duration + priority at minimum)
+- Let a user add/edit tasks (duration, frequency, and priority)
 - Generate a daily schedule/plan based on constraints and priorities
-- Display the plan clearly (and ideally explain the reasoning)
-- Include tests for the most important scheduling behaviors
+- Display a plan table plus conflict warnings
+- Verify behavior with an automated pytest suite
+
+## 📸 Demo
+
+<a href="/course_images/ai110/pawpalsrc.png" target="_blank"><img src='/course_images/ai110/pawpalsrc.png' title='PawPal App' width='900' alt='PawPal App' class='center-block' /></a>
 
 ## Getting started
 
@@ -42,9 +72,9 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
-## Smarter Scheduling Features
+## Smarter Scheduling Details
 
-Beyond basic task management, PawPal+ includes several algorithmic improvements to help owners plan better:
+Below is a method-level breakdown of the algorithmic layer:
 
 ### Sorting Methods
 - **`sort_by_duration()`**: Order tasks from quick (e.g., 5 min feeding) to long (e.g., 30 min walk), or vice versa. Useful for fitting quick wins into tight schedules.

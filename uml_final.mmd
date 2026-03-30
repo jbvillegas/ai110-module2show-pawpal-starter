@@ -1,0 +1,58 @@
+classDiagram
+  class Task {
+    +String description
+    +int time_minutes
+    +String frequency
+    +bool completed
+    +String priority
+    +date|None last_completed_on
+    +mark_complete(completed_on=None) None
+    +mark_incomplete() None
+    +get_next_occurrence_date() date|None
+    +create_next_occurrence() Task|None
+    +is_due(on_date=None) bool
+  }
+
+  class Pet {
+    +String name
+    +String species
+    +int age
+    +List~Task~ tasks
+    +add_task(task) None
+    +remove_task(description) bool
+    +get_tasks(include_completed=True) List~Task~
+    +get_due_tasks(on_date=None) List~Task~
+  }
+
+  class Owner {
+    +String name
+    +List~Pet~ pets
+    +add_pet(pet) None
+    +remove_pet(pet_name) bool
+    +get_pet(pet_name) Pet|None
+    +get_all_tasks(include_completed=True) List~Tuple~Pet,Task~~
+  }
+
+  class Scheduler {
+    +Dict~String,int~ frequency_weight
+    +Dict~String,int~ priority_weight
+    +retrieve_all_tasks(owner, include_completed=False) List~Tuple~Pet,Task~~
+    +organize_tasks(owner, on_date=None) List~Tuple~Pet,Task~~
+    +build_daily_plan(owner, available_minutes, on_date=None) List~Tuple~Pet,Task~~
+    +mark_task_complete(owner, pet_name, task_description) bool
+    +plan_summary(plan) String
+    +sort_by_duration(tasks, ascending=True) List~Tuple~Pet,Task~~
+    +sort_by_priority(tasks) List~Tuple~Pet,Task~~
+    +sort_by_pet_name(tasks) List~Tuple~Pet,Task~~
+    +filter_by_pet(tasks, pet_name) List~Tuple~Pet,Task~~
+    +filter_by_completion_status(tasks, completed=False) List~Tuple~Pet,Task~~
+    +filter_by_priority(tasks, min_priority="low") List~Tuple~Pet,Task~~
+    +detect_conflicts(plan) List~String~
+    +validate_plan(plan, available_minutes) Tuple~List~Tuple~Pet,Task~~,List~String~~
+  }
+
+  Owner "1" o-- "0..*" Pet : manages
+  Pet "1" o-- "0..*" Task : has
+  Scheduler ..> Owner : reads pets/tasks
+  Scheduler ..> Pet : marks task complete
+  Scheduler ..> Task : evaluates due/sort/filter/conflicts

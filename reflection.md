@@ -31,7 +31,7 @@
 
 - Yes, my design changed during implementation.
 
-- The biggest change was scope reduction from the full 8-class UML to a smaller, testable 4-class backend in [pawpal_system.py](pawpal_system.py): Owner, Pet, CareTask, and Scheduler. I made this change to deliver a working vertical slice faster, keep the API surface manageable, and avoid over-engineering before core scheduling behavior was validated.
+- The biggest change was scope reduction from the full 8-class UML to a smaller, testable 4-class backend in [pawpal_system.py](pawpal_system.py): Owner, Pet, Task, and Scheduler. I made this change to deliver a working vertical slice faster, keep the API surface manageable, and avoid over-engineering before core scheduling behavior was validated.
 
 - I also shifted explanatory output responsibilities into Scheduler for the first version (via an explain method) rather than maintaining a separate PlanExplainer class. This reduced cross-class coordination early on and made debugging easier while the scheduling rules were still evolving.
 
@@ -59,7 +59,7 @@ I decided constraints mattered in this order because:
 - **Priority is user-driven**: Each task's importance is assigned by the owner based on their specific pet's needs.
 - **Frequency compounds**: Daily tasks accumulate faster than weekly ones, making them more pressing to include in the plan.
 
-I deprioritized other potential constraints (time-of-day preferences, pet energy levels, pet compatibility) in the MVP because they would have tripled implementation complexity. These are now tracked in [IMPROVEMENTS.md](IMPROVEMENTS.md) for future phases.
+I deprioritized other potential constraints (time-of-day preferences, pet energy levels, pet compatibility) in the MVP because they would have tripled implementation complexity. These are now tracked in [IMPROVEMENTS.md](documentation/IMPROVEMENTS.md) for future phases.
 
 **b. Tradeoffs**
 
@@ -99,33 +99,60 @@ Another minor tradeoff: **exact time matching vs. conflict detection**. The sche
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
 - What kinds of prompts or questions were most helpful?
 
-I used AI primarily for **code implementation acceleration and test generation**:
+I used AI mostly to move faster on implementation and test design:
 
-1. **Design clarification**: Asked AI to review the initial UML design and identify missing relationships and potential bottlenecks. This helped me articulate design tradeoffs in reflection.md sections 1a and 1b early.
+1. **Design clarification**: I asked AI to review my first UML draft and point out missing relationships or likely bottlenecks. That helped me tighten my design discussion early.
 
-2. **Test case generation**: Asked AI to suggest test scenarios for recurring tasks, filtering, and sorting. The AI helped ensure I covered edge cases (daily vs. weekly intervals, one-time tasks, auto-generation) that I might have missed.
+2. **Test case generation**: I used AI to suggest test scenarios for recurring tasks, filtering, and sorting. It helped me catch edge cases I probably would have missed on the first pass.
 
-3. **Refactoring suggestions**: During the Phase 4 improvements (sorting, filtering, conflict detection), I asked the AI how to structure these methods cleanly. The AI suggested lambda-based sorting and the (Pet, Task) tuple pattern, which I adopted.
+3. **Refactoring suggestions**: During Phase 4, I asked for cleaner ways to structure sorting, filtering, and conflict detection. I ended up adopting the lambda-based sorting approach and the `(Pet, Task)` tuple pattern.
 
-4. **Documentation**: Used AI to draft clearer docstrings and to suggest what tradeoffs to highlight in this reflection.
+4. **Documentation**: I used AI for docstring cleanup and for brainstorming which tradeoffs were worth calling out in this reflection.
 
-Most helpful questions were **specific and context-rich**: "Here's my current sorting lambda. How would you structure this for better readability?" worked better than "How do I sort tasks?" The AI works best when given concrete code and asked to improve specific aspects rather than starting from vague requirements.
+The most helpful prompts were specific and code-based. For example, asking "Here is my sorting lambda, how can I make it more readable?" worked much better than broad prompts like "How do I sort tasks?".
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
 - How did you evaluate or verify what the AI suggested?
 
-When reviewing the `organize_tasks()` algorithm, the AI suggested extracting the sorting key into a separate `_calculate_sort_key()` method for better modularity and testability. While this is more "Pythonic" in a software engineering sense, I **rejected this suggestion and kept the inline lambda**.
+When I reviewed `organize_tasks()`, AI suggested extracting the sort key into a helper method. I decided not to do that and kept the inline lambda.
 
 My reasoning:
-1. **Readability for the domain**: For a pet care app, clarity about *what* we're sorting by matters more than separation of concerns. The tuple-based sort key is clear at a glance: priority (descending), frequency (descending), duration (ascending), then name and description for stable ordering.
-2. **Implementation scope**: The method is already lean (~12 lines). Extracting to a helper adds indirection without reducing complexity or improving testability (the sort key is a simple pure function).
-3. **Project stage**: At the MVP stage, I prioritize reducing layers of abstraction. If the scheduler grows to 10+ sorting criteria or becomes user-configurable, refactoring becomes worthwhile.
+1. **Readability**: In this project, seeing the sort order directly in one place is easier to understand.
+2. **Scope**: The method is already short, so extracting a helper would add indirection without much benefit.
+3. **Project stage**: For an MVP, I preferred fewer abstractions. I would refactor if the sorting rules become larger or user-configurable.
 
-**Verification**: I tested both versions mentally by reading through the code and asking: "Would someone new to this codebase understand the ranking logic faster?" The answer was yes for the inline version. I also checked whether the extracted version would improve test coverage—it wouldn't, since the sort key is deterministic and tested implicitly through `test_build_daily_plan` already.
+**Verification**: I compared both versions and asked which one would be easier for a new teammate to read quickly. The inline version won for this codebase. I also checked whether extraction would improve test coverage, and it would not.
 
-This moment taught me to **evaluate AI suggestions through the lens of project stage and team context**, not just software engineering best practices. "Good code" depends on the phase and audience.
+This reinforced a practical lesson: good suggestions still need to match the stage of the project. I used AI guidance, but I still made the final call based on readability and scope.
+
+**c. Copilot strategy reflection**
+
+- Which Copilot features were most effective for building your scheduler?
+- Give one example of an AI suggestion you rejected or modified to keep your system design clean.
+- How did using separate chat sessions for different phases help you stay organized?
+- What did you learn about being the lead architect when working with powerful AI tools?
+
+The most useful Copilot features in VS Code were:
+
+1. **`#file:pawpal_system.py` grounding**: This kept suggestions tied to the real backend API and reduced generic advice.
+2. **`#codebase` context**: This helped Copilot reason across `app.py`, tests, and docs when I needed consistent updates.
+3. **Inline Chat for local fixes**: It was fast for debugging one failing test or improving one method without leaving the file.
+4. **Chat mode for planning**: For broader work (test planning, architecture cleanup), the chat thread was better than inline edits.
+
+One suggestion I explicitly rejected was extracting the `organize_tasks()` sort key into a helper too early. I kept the inline lambda because it made ranking logic obvious in one place during MVP development. I only want extra abstraction when complexity actually justifies it.
+
+Using separate chat sessions by phase helped a lot with organization:
+
+1. **Design session**: UML and class boundaries only.
+2. **Implementation session**: method behavior and algorithm choices.
+3. **Testing session**: edge cases, assertions, and failure triage.
+4. **Documentation session**: README and reflection polish.
+
+That separation reduced context mixing, made prompts more focused, and made it easier to track decisions.
+
+My biggest takeaway about being the lead architect is that AI is powerful, but it is still a collaborator, not the decision-maker. My role was to define scope, enforce naming/model consistency, reject unnecessary complexity, and verify behavior with tests. In other words, Copilot sped up execution, but system quality still depended on my architectural judgment.
 
 ---
 
@@ -136,7 +163,7 @@ This moment taught me to **evaluate AI suggestions through the lens of project s
 - What behaviors did you test?
 - Why were these tests important?
 
-I wrote 15 unit tests covering five critical areas:
+I initially wrote 15 unit tests across five critical areas:
 
 1. **Task completion lifecycle** (2 tests): Verify that marking a task complete sets `completed=True` and `last_completed_on=date`, and that marking incomplete resets the flag. Essential because the UI relies on accurate task state.
 
@@ -148,20 +175,20 @@ I wrote 15 unit tests covering five critical areas:
 
 5. **Scheduling algorithm** (2 tests): Verify that `build_daily_plan()` respects time limits and that `plan_summary()` generates readable output. Important for the core MVP feature.
 
-I focused on **behavioral correctness over edge cases** because the app operates on small datasets (5-30 tasks per day) and session state, not a persistent database. The tests verify that the system works as designed for typical usage.
+At first, I focused more on core behavior than rare edge cases, since the app runs on small daily task sets and in-memory state.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
 
-**Confidence level: 8/10** for the core scheduling algorithm. All 15 tests pass, the demo works, and the Streamlit UI integrates cleanly. I'm confident in:
+At that stage, my confidence was **8/10**. All 15 tests passed, the demo worked, and the Streamlit integration was stable. I felt strongest in:
 - Task creation, completion, and recurring automation
 - Sorting and filtering (tested with real data in main.py)
 - Time budget planning (greedy algorithm is simple and predictable)
 - Conflict detection (warnings are heuristic-based and safe to show)
 
-I'm **less confident** (6/10) about:
+I was less confident about:
 - Behavior when a pet has 100+ tasks (not tested; may have performance issues)
 - Handling of tasks added with `time_minutes=0` (untested edge case)
 - Behavior when `available_minutes=0` (should return empty plan, assumed correct but not tested)
@@ -175,7 +202,7 @@ I'm **less confident** (6/10) about:
 5. Recurring task due date boundary (daily task due at 11:59 PM on March 30, check if it's due on March 31)
 6. Conflict detection on empty plan → should return no warnings, not crash
 
-These edge cases would take 1-2 hours to test properly and would increase confidence to 9/10.
+Those edge cases were my next priority for raising confidence.
 
 ---
 
@@ -185,19 +212,19 @@ These edge cases would take 1-2 hours to test properly and would increase confid
 
 - What part of this project are you most satisfied with?
 
-I'm most satisfied with **recurring task automation** (Phase 3). The combination of:
+The part I am most satisfied with is the recurring task automation (Phase 3). The combination of:
 - Frequency-to-days mapping constant (FREQUENCY_TO_DAYS)
 - `Task.get_next_occurrence_date()` using timedelta for clean date arithmetic
 - `Scheduler.mark_task_complete()` auto-generating the next occurrence
-...creates a feature that feels polished and requires zero user interaction after the initial task is created. A daily task automatically resets; a weekly task automatically advances by 7 days. The implementation is short (~20 lines), tested thoroughly (7 tests), and solves a real user pain point.
+...creates a feature that is actually useful in practice. After setup, recurring tasks keep moving forward automatically. The implementation is compact, testable, and removes manual work for the user.
 
-Second, I'm satisfied with the **design-to-implementation journey documented in reflection.md 1b**. Starting with an ambitious 8-class UML and ruthlessly cutting to 4 classes is a skill we need in real systems engineering. By committing to a smaller scope early and delivering a working MVP, I unblocked the algorithmic improvements (sorting, filtering, conflicts) that would have been impossible if I'd tried to build the full design upfront.
+I am also happy with the design-to-implementation path. I started with a broader UML and then reduced scope to 4 core classes so I could ship a working version quickly. That decision made it possible to finish the sorting, filtering, and conflict-detection improvements on time.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
 
-Top improvements for the next phase (documented in [IMPROVEMENTS.md](IMPROVEMENTS.md#phase-2-medium-effort-features)):
+Top improvements for the next phase (also documented in [IMPROVEMENTS.md](documentation/IMPROVEMENTS.md)):
 
 1. **Decision reasoning**: Add a `build_daily_plan_with_reasoning()` method that returns not just the plan but a dict of `{task: reason_for_inclusion_or_exclusion}`. Users should understand why their dog's morning walk was skipped (time budget exceeded) vs. why playtime was removed (lower priority than feeding).
 
@@ -207,19 +234,19 @@ Top improvements for the next phase (documented in [IMPROVEMENTS.md](IMPROVEMENT
 
 4. **Persistent storage**: Migrate from Streamlit session state (in-memory, lost on page reload) to SQLite or PostgreSQL. Right now, users lose their pet data if they close the browser.
 
-5. **UI polish**: Add pet photos, task emoji icons, and one-click "mark complete" toggles in the schedule display. The current text-only plan is functional but not delightful.
+5. **UI polish**: Add pet photos and one-click "mark complete" toggles in the schedule display. The current text-only layout works, but it still feels basic.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
 
-**Don't optimize for abstraction early; optimize for clarity and iteration speed.**
+**Do not over-engineer early; prioritize clarity and iteration speed.**
 
-My initial UML was architecturally sound but overbuilt. Features like PlanExplainer and DailyConstraint made sense on a whiteboard but weren't needed for the MVP. By cutting them, I:
+My initial UML made sense conceptually but was too large for an MVP. Features like PlanExplainer and DailyConstraint were valid ideas, but not necessary in the first implementation. By cutting them, I:
 - Went from design to working code in one afternoon instead of a week
 - Could test hypotheses (Does a greedy algorithm work? Can users understand tuple-based sorting?)
 - Unblocked the algorithmic improvements (filtering, sorting, recurring tasks, conflicts) that made the system genuinely useful
 
-The lesson transfers to AI collaboration: **Give AI specific code to improve, not vague requirements to design.** "How would you refactor this lambda?" (specific code) gets better results than "Design a pet care scheduler" (vague). And when AI suggests adding abstraction layers (helper methods, configuration classes), evaluate them in the context of *your project's maturity*, not generic software engineering principles.
+The same applies to AI collaboration: specific prompts with concrete code produce better results than broad prompts. Also, AI suggestions about architecture are useful, but they still need to fit the maturity of the project.
 
-Finally: **Tests validate assumptions, not just correctness.** Writing tests for recurring task date calculation (daily=+1 day, weekly=+7) forced me to think concretely about edge cases (month boundaries, leap years). The test suite became the specification of what the system should do, not just a safety net.
+Finally, tests did more than catch bugs; they clarified expected behavior. Writing recurrence tests forced me to define exact rules for dates and edge cases. The test suite ended up acting like a specification for the scheduling logic.
