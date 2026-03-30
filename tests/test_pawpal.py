@@ -233,6 +233,380 @@ class TestRecurringTasks:
         assert next_date == date(2026, 3, 30)
 
 
+class TestSortingMethods:
+    """Test Scheduler sorting algorithms."""
+
+    def test_sort_by_duration_ascending(self):
+        """Verify that sort_by_duration() orders tasks from shortest to longest."""
+        scheduler = Scheduler()
+        
+        # Create tasks with different durations
+        tasks = [
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Walk", time_minutes=30, frequency="daily")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Feeding", time_minutes=10, frequency="daily")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Play", time_minutes=40, frequency="daily")),
+        ]
+        
+        # Sort ascending (shortest first)
+        sorted_tasks = scheduler.sort_by_duration(tasks, ascending=True)
+        
+        # Verify order: 10, 30, 40
+        assert sorted_tasks[0][1].time_minutes == 10
+        assert sorted_tasks[1][1].time_minutes == 30
+        assert sorted_tasks[2][1].time_minutes == 40
+
+    def test_sort_by_duration_descending(self):
+        """Verify that sort_by_duration(ascending=False) orders longest to shortest."""
+        scheduler = Scheduler()
+        
+        tasks = [
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Walk", time_minutes=30, frequency="daily")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Feeding", time_minutes=10, frequency="daily")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Play", time_minutes=40, frequency="daily")),
+        ]
+        
+        # Sort descending (longest first)
+        sorted_tasks = scheduler.sort_by_duration(tasks, ascending=False)
+        
+        # Verify order: 40, 30, 10
+        assert sorted_tasks[0][1].time_minutes == 40
+        assert sorted_tasks[1][1].time_minutes == 30
+        assert sorted_tasks[2][1].time_minutes == 10
+
+    def test_sort_by_priority_high_first(self):
+        """Verify that sort_by_priority() orders high-priority tasks first."""
+        scheduler = Scheduler()
+        
+        tasks = [
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Play", time_minutes=20, frequency="daily", priority="low")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Walk", time_minutes=30, frequency="daily", priority="high")),
+            (Pet(name="Buddy", species="dog", age=3), Task(description="Grooming", time_minutes=45, frequency="weekly", priority="medium")),
+        ]
+        
+        sorted_tasks = scheduler.sort_by_priority(tasks)
+        
+        # Verify order: high, medium, low
+        assert sorted_tasks[0][1].priority == "high"
+        assert sorted_tasks[1][1].priority == "medium"
+        assert sorted_tasks[2][1].priority == "low"
+
+    def test_sort_by_pet_name_alphabetically(self):
+        """Verify that sort_by_pet_name() orders tasks alphabetically by pet name."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        whiskers = Pet(name="Whiskers", species="cat", age=5)
+        max_pet = Pet(name="Max", species="dog", age=2)
+        
+        tasks = [
+            (whiskers, Task(description="Feeding", time_minutes=5, frequency="daily")),
+            (buddy, Task(description="Walk", time_minutes=30, frequency="daily")),
+            (max_pet, Task(description="Play", time_minutes=20, frequency="daily")),
+        ]
+        
+        sorted_tasks = scheduler.sort_by_pet_name(tasks)
+        
+        # Verify order: Buddy, Max, Whiskers (alphabetical)
+        assert sorted_tasks[0][0].name == "Buddy"
+        assert sorted_tasks[1][0].name == "Max"
+        assert sorted_tasks[2][0].name == "Whiskers"
+
+    def test_sort_by_priority_case_insensitive(self):
+        """Verify that sorting works with case-insensitive pet names."""
+        scheduler = Scheduler()
+        
+        buddy_lower = Pet(name="buddy", species="dog", age=3)
+        buddy_upper = Pet(name="BUDDY", species="dog", age=3)
+        
+        tasks = [
+            (buddy_upper, Task(description="Walk", time_minutes=30, frequency="daily")),
+            (buddy_lower, Task(description="Feeding", time_minutes=10, frequency="daily")),
+        ]
+        
+        sorted_tasks = scheduler.sort_by_pet_name(tasks)
+        
+        # Both should be grouped together (both "buddy" when lowercased)
+        assert len(sorted_tasks) == 2
+
+
+class TestFilteringMethods:
+    """Test Scheduler filtering algorithms."""
+
+    def test_filter_by_pet_single_pet(self):
+        """Verify that filter_by_pet() returns only tasks for the specified pet."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        whiskers = Pet(name="Whiskers", species="cat", age=5)
+        
+        tasks = [
+            (buddy, Task(description="Walk", time_minutes=30, frequency="daily")),
+            (whiskers, Task(description="Feeding", time_minutes=5, frequency="daily")),
+            (buddy, Task(description="Play", time_minutes=20, frequency="daily")),
+        ]
+        
+        # Filter for Buddy's tasks
+        buddy_tasks = scheduler.filter_by_pet(tasks, "Buddy")
+        
+        # Verify only Buddy's tasks returned
+        assert len(buddy_tasks) == 2
+        assert all(pet.name == "Buddy" for pet, _ in buddy_tasks)
+        descriptions = {task.description for _, task in buddy_tasks}
+        assert descriptions == {"Walk", "Play"}
+
+    def test_filter_by_pet_case_insensitive(self):
+        """Verify that filter_by_pet() is case-insensitive."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        tasks = [(buddy, Task(description="Walk", time_minutes=30, frequency="daily"))]
+        
+        # Filter with different cases
+        result_lower = scheduler.filter_by_pet(tasks, "buddy")
+        result_upper = scheduler.filter_by_pet(tasks, "BUDDY")
+        
+        # Verify both return the same tasks
+        assert len(result_lower) == 1
+        assert len(result_upper) == 1
+
+    def test_filter_by_priority_high_tasks(self):
+        """Verify that filter_by_priority() returns tasks at or above threshold."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        tasks = [
+            (buddy, Task(description="Walk", time_minutes=30, frequency="daily", priority="high")),
+            (buddy, Task(description="Grooming", time_minutes=45, frequency="weekly", priority="medium")),
+            (buddy, Task(description="Play", time_minutes=20, frequency="daily", priority="low")),
+        ]
+        
+        # Filter for high-priority only
+        high_priority = scheduler.filter_by_priority(tasks, min_priority="high")
+        
+        # Verify only high-priority tasks returned
+        assert len(high_priority) == 1
+        assert high_priority[0][1].priority == "high"
+
+    def test_filter_by_priority_medium_and_high(self):
+        """Verify that filter_by_priority(medium) returns medium and high tasks."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        tasks = [
+            (buddy, Task(description="Walk", time_minutes=30, frequency="daily", priority="high")),
+            (buddy, Task(description="Grooming", time_minutes=45, frequency="weekly", priority="medium")),
+            (buddy, Task(description="Play", time_minutes=20, frequency="daily", priority="low")),
+        ]
+        
+        # Filter for medium-priority and above
+        medium_and_above = scheduler.filter_by_priority(tasks, min_priority="medium")
+        
+        # Verify medium and high returned, low excluded
+        assert len(medium_and_above) == 2
+        priorities = {task.priority for _, task in medium_and_above}
+        assert priorities == {"high", "medium"}
+
+    def test_filter_by_completion_status_pending(self):
+        """Verify that filter_by_completion_status() returns pending tasks when completed=False."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        task1 = Task(description="Walk", time_minutes=30, frequency="daily")
+        task2 = Task(description="Feeding", time_minutes=10, frequency="daily")
+        task2.mark_complete()
+        
+        tasks = [
+            (buddy, task1),
+            (buddy, task2),
+        ]
+        
+        # Filter for pending tasks
+        pending = scheduler.filter_by_completion_status(tasks, completed=False)
+        
+        # Verify only pending tasks returned
+        assert len(pending) == 1
+        assert pending[0][1].description == "Walk"
+
+    def test_filter_by_completion_status_completed(self):
+        """Verify that filter_by_completion_status() returns completed tasks when completed=True."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        task1 = Task(description="Walk", time_minutes=30, frequency="daily")
+        task2 = Task(description="Feeding", time_minutes=10, frequency="daily")
+        task2.mark_complete()
+        
+        tasks = [
+            (buddy, task1),
+            (buddy, task2),
+        ]
+        
+        # Filter for completed tasks
+        completed = scheduler.filter_by_completion_status(tasks, completed=True)
+        
+        # Verify only completed tasks returned
+        assert len(completed) == 1
+        assert completed[0][1].description == "Feeding"
+
+    def test_chaining_filters_pet_then_priority(self):
+        """Verify that filters can be chained effectively."""
+        scheduler = Scheduler()
+        
+        buddy = Pet(name="Buddy", species="dog", age=3)
+        whiskers = Pet(name="Whiskers", species="cat", age=5)
+        
+        tasks = [
+            (buddy, Task(description="Walk", time_minutes=30, frequency="daily", priority="high")),
+            (whiskers, Task(description="Feeding", time_minutes=5, frequency="daily", priority="high")),
+            (buddy, Task(description="Play", time_minutes=20, frequency="daily", priority="low")),
+        ]
+        
+        # Chain filters: get Buddy's high-priority tasks
+        buddy_tasks = scheduler.filter_by_pet(tasks, "Buddy")
+        buddy_high = scheduler.filter_by_priority(buddy_tasks, min_priority="high")
+        
+        # Verify result
+        assert len(buddy_high) == 1
+        assert buddy_high[0][0].name == "Buddy"
+        assert buddy_high[0][1].priority == "high"
+
+
+class TestConflictDetection:
+    """Test Scheduler conflict detection."""
+
+    def test_detect_pet_overwhelm_three_high_priority(self):
+        """Verify that detect_conflicts() warns when a pet has 3+ high-priority tasks."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        
+        dog.add_task(Task(description="Walk 1", time_minutes=30, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Walk 2", time_minutes=30, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Feeding", time_minutes=10, frequency="daily", priority="high"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=180)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify overwhelm warning is generated
+        assert len(warnings) > 0
+        assert any("overwhelm" in w.lower() for w in warnings)
+
+    def test_detect_no_overwhelm_two_tasks_total(self):
+        """Verify that no overwhelm warning when pet has only 2 total tasks."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        
+        dog.add_task(Task(description="Walk", time_minutes=30, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Feeding", time_minutes=10, frequency="daily", priority="high"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=180)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify no overwhelm warning (only 2 tasks total)
+        assert not any("overwhelm" in w.lower() for w in warnings)
+
+    def test_detect_energy_missequencing(self):
+        """Verify that detect_conflicts() warns about high-energy followed by grooming."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Max", species="dog", age=5)
+        
+        dog.add_task(Task(description="Playtime", time_minutes=40, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Grooming", time_minutes=45, frequency="daily", priority="high"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=150)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify energy missequencing warning
+        assert len(warnings) > 0
+        assert any("energetic" in w.lower() for w in warnings)
+
+    def test_detect_back_to_back_high_energy_over_60_min(self):
+        """Verify that detect_conflicts() warns about back-to-back high-energy tasks >60 min."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Max", species="dog", age=5)
+        
+        dog.add_task(Task(description="Walk", time_minutes=35, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Playtime", time_minutes=35, frequency="daily", priority="high"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=180)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify back-to-back high-energy warning
+        assert len(warnings) > 0
+        assert any("back-to-back" in w.lower() for w in warnings)
+
+    def test_no_warning_for_back_to_back_under_60_min(self):
+        """Verify no warning when back-to-back high-energy tasks total less than 60 min."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Max", species="dog", age=5)
+        
+        dog.add_task(Task(description="Walk", time_minutes=25, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Playtime", time_minutes=30, frequency="daily", priority="high"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=180)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify no back-to-back warning (55 min total < 60)
+        assert not any("back-to-back" in w.lower() for w in warnings)
+
+    def test_detect_time_overrun_over_180_minutes(self):
+        """Verify that detect_conflicts() warns when total time exceeds 180 minutes."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        
+        dog.add_task(Task(description="Walk 1", time_minutes=60, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Walk 2", time_minutes=60, frequency="daily", priority="high"))
+        dog.add_task(Task(description="Play", time_minutes=61, frequency="daily", priority="medium"))
+        
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=500)
+        warnings = scheduler.detect_conflicts(plan)
+        
+        # Verify time overrun warning
+        assert len(warnings) > 0
+        assert any("exhausting" in w.lower() or "info" in w.lower() for w in warnings)
+
+    def test_no_warning_for_empty_plan(self):
+        """Verify that detect_conflicts() handles empty plans without crashing."""
+        scheduler = Scheduler()
+        warnings = scheduler.detect_conflicts([])
+        
+        # Should return empty list without errors
+        assert warnings == []
+
+    def test_validate_plan_returns_plan_and_warnings(self):
+        """Verify that validate_plan() returns both plan and warnings."""
+        owner = Owner(name="Alice")
+        dog = Pet(name="Buddy", species="dog", age=3)
+        dog.add_task(Task(description="Walk", time_minutes=30, frequency="daily", priority="high"))
+        owner.add_pet(dog)
+        
+        scheduler = Scheduler()
+        plan = scheduler.build_daily_plan(owner, available_minutes=60)
+        validated_plan, warnings = scheduler.validate_plan(plan, available_minutes=60)
+        
+        # Verify return structure
+        assert isinstance(validated_plan, list)
+        assert isinstance(warnings, list)
+        assert validated_plan == plan  # Plan should be unchanged
+
+
 class TestScheduler:
     """Test Scheduler functionality."""
 
