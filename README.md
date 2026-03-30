@@ -50,7 +50,7 @@ The current implementation supports:
 
 ## 📸 Demo
 
-<a href="/course_images/ai110/pawpalsrc.png" target="_blank"><img src='/course_images/ai110/pawpalsrc.png' title='PawPal App' width='900' alt='PawPal App' class='center-block' /></a>
+<a href="assets/pawpalsrc.png" target="_blank"><img src='assets/pawpalsrc.png' title='PawPal App' width='900' alt='PawPal App' class='center-block' /></a>
 
 ## Getting started
 
