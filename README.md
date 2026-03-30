@@ -41,3 +41,35 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+## Smarter Scheduling Features
+
+Beyond basic task management, PawPal+ includes several algorithmic improvements to help owners plan better:
+
+### Sorting Methods
+- **`sort_by_duration()`**: Order tasks from quick (e.g., 5 min feeding) to long (e.g., 30 min walk), or vice versa. Useful for fitting quick wins into tight schedules.
+- **`sort_by_priority()`**: Rank tasks by importance (high → medium → low). Essential care comes first; optional enrichment comes later.
+- **`sort_by_pet_name()`**: Group tasks by pet for easier review of individual pet schedules.
+
+### Filtering Methods
+- **`filter_by_pet()`**: View only tasks for a specific pet (e.g., "Show me everything for Buddy").
+- **`filter_by_priority()`**: Find all high-priority tasks to ensure critical care isn't skipped.
+- **`filter_by_completion_status()`**: See pending vs. completed tasks to track progress and plan ahead.
+
+### Recurring Task Automation
+Tasks can be set to repeat on a schedule:
+- **Daily**: Morning walk auto-generates every day (1-day interval).
+- **Weekly**: Grooming auto-generates every 7 days.
+- **Biweekly/Monthly**: Longer intervals for less frequent tasks.
+- **Once**: One-time tasks don't repeat.
+
+When a recurring task is marked complete, the system automatically creates the next occurrence with the same properties, eliminating manual rescheduling.
+
+### Conflict Detection
+Before presenting a plan, the scheduler scans for potential issues:
+- **Pet overwhelm**: Warns if one pet has 3+ high-priority tasks in a single day.
+- **Energy missequencing**: Alerts when a high-energy task (walk, playtime) is immediately followed by grooming—the pet may be too energetic for grooming.
+- **Back-to-back high-energy**: Flags two high-energy tasks totaling >60 minutes consecutively.
+- **Time overrun**: Informs when total scheduled time exceeds 180 minutes (3+ hours).
+
+Warnings are non-blocking; the plan is still presented to the user with warnings displayed prominently.

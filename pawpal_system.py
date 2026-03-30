@@ -250,12 +250,31 @@ class Scheduler:
         return "\n".join(lines)
 
     def sort_by_duration(self, tasks: Sequence[Tuple[Pet, Task]], ascending: bool = True) -> List[Tuple[Pet, Task]]:
-        """Sort tasks by duration (time_minutes) in ascending or descending order."""
+        """
+        Sort tasks by duration (time_minutes) in ascending or descending order.
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to be sorted.
+            ascending: If True, shortest tasks first (default). If False, longest tasks first.
+        
+        Returns:
+            Sorted list of (Pet, Task) tuples ordered by task duration.
+        """
         reverse = not ascending
         return sorted(tasks, key=lambda pair: pair[1].time_minutes, reverse=reverse)
 
     def sort_by_priority(self, tasks: Sequence[Tuple[Pet, Task]]) -> List[Tuple[Pet, Task]]:
-        """Sort tasks by priority (high > medium > low)."""
+        """
+        Sort tasks by priority level, with high priority tasks first.
+        
+        Priority order: high (3) > medium (2) > low (1).
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to be sorted.
+        
+        Returns:
+            Sorted list of (Pet, Task) tuples ordered by priority level (descending).
+        """
         priority_order = {"high": 3, "medium": 2, "low": 1}
         return sorted(
             tasks,
@@ -264,19 +283,56 @@ class Scheduler:
         )
 
     def sort_by_pet_name(self, tasks: Sequence[Tuple[Pet, Task]]) -> List[Tuple[Pet, Task]]:
-        """Sort tasks by pet name alphabetically."""
+        """
+        Sort tasks by pet name in alphabetical order (case-insensitive).
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to be sorted.
+        
+        Returns:
+            Sorted list of (Pet, Task) tuples ordered alphabetically by pet name.
+        """
         return sorted(tasks, key=lambda pair: pair[0].name.lower())
 
     def filter_by_pet(self, tasks: Sequence[Tuple[Pet, Task]], pet_name: str) -> List[Tuple[Pet, Task]]:
-        """Filter tasks to include only those belonging to a specific pet."""
+        """
+        Filter tasks to include only those belonging to a specific pet.
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to filter.
+            pet_name: The name of the pet (case-insensitive) to filter by.
+        
+        Returns:
+            List of (Pet, Task) tuples where the pet name matches (case-insensitive).
+        """
         return [pair for pair in tasks if pair[0].name.lower() == pet_name.lower()]
 
     def filter_by_completion_status(self, tasks: Sequence[Tuple[Pet, Task]], completed: bool = False) -> List[Tuple[Pet, Task]]:
-        """Filter tasks by completion status (completed=True for done tasks, False for pending)."""
+        """
+        Filter tasks by completion status.
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to filter.
+            completed: If True, return only completed tasks. If False (default), return only pending tasks.
+        
+        Returns:
+            List of (Pet, Task) tuples matching the completion status.
+        """
         return [pair for pair in tasks if pair[1].completed == completed]
 
     def filter_by_priority(self, tasks: Sequence[Tuple[Pet, Task]], min_priority: str = "low") -> List[Tuple[Pet, Task]]:
-        """Filter tasks with priority level >= min_priority (low, medium, high)."""
+        """
+        Filter tasks to include only those at or above a minimum priority level.
+        
+        Priority levels: low (1) < medium (2) < high (3).
+        
+        Args:
+            tasks: Sequence of (Pet, Task) tuples to filter.
+            min_priority: Minimum priority level to include ("low", "medium", or "high"). Default: "low".
+        
+        Returns:
+            List of (Pet, Task) tuples with priority >= min_priority.
+        """
         priority_order = {"high": 3, "medium": 2, "low": 1}
         min_level = priority_order.get(min_priority, 0)
         return [
@@ -285,7 +341,22 @@ class Scheduler:
         ]
 
     def detect_conflicts(self, plan: List[Tuple[Pet, Task]]) -> List[str]:
-        """Detect scheduling conflicts and return warning messages."""
+        """
+        Detect potential scheduling conflicts and return warning messages.
+        
+        Checks for:
+        - Pet overwhelm: A single pet with 3+ high-priority tasks in one day.
+        - Energy missequencing: High-energy task (walk/play/fetch/run) followed by grooming.
+        - Back-to-back high-energy: Two high-energy tasks totaling >60 minutes consecutively.
+        - Time overrun: Total schedule >180 minutes (3+ hours).
+        
+        Args:
+            plan: List of (Pet, Task) tuples representing the scheduled plan.
+        
+        Returns:
+            List of warning messages (strings). Empty list if no conflicts detected.
+            Messages use ⚠️ for warnings and ℹ️ for informational alerts.
+        """
         warnings = []
 
         # Check for same-pet task conflicts (too many tasks back-to-back)
@@ -340,6 +411,21 @@ class Scheduler:
         return warnings
 
     def validate_plan(self, plan: List[Tuple[Pet, Task]], available_minutes: int) -> tuple[List[Tuple[Pet, Task]], List[str]]:
-        """Validate a plan and return it with any conflict warnings."""
+        """
+        Validate a plan and return it with any conflict warnings.
+        
+        This method runs conflict detection on a plan and returns both the plan
+        and any warnings as a tuple. Useful for checking scheduling issues before
+        presenting the plan to the user.
+        
+        Args:
+            plan: List of (Pet, Task) tuples representing the scheduled plan.
+            available_minutes: The time budget used to create the plan (for context).
+        
+        Returns:
+            Tuple of (plan, warnings) where:
+            - plan: The original (Pet, Task) list unchanged.
+            - warnings: List of warning message strings from detect_conflicts().
+        """
         warnings = self.detect_conflicts(plan)
         return plan, warnings
